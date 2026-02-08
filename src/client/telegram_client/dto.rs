@@ -25,18 +25,19 @@ impl SendMessageDto {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
-    message_id: i64,
-    message_thread_id: Option<i64>,
-    from: User,
-    date: i64,
-    chat: Chat
+    pub  message_id: i64,
+    pub  message_thread_id: Option<i64>,
+    pub  from: User,
+    pub  date: i64,
+    pub  chat: Chat,
+    pub  text: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Update {
-    update_id: i64,
-    message: Option<Message>,
-    edited_message: Option<Message>
+    pub  update_id: i64,
+    pub  message: Option<Message>,
+    pub  edited_message: Option<Message>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
