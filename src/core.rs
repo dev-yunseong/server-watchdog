@@ -1,6 +1,7 @@
 mod runner;
-mod registrar;
+pub  mod registrar;
 
+use crate::client::ClientKind;
 use std::collections::HashMap;
 use async_trait::async_trait;
 
@@ -28,5 +29,18 @@ impl WorkerRegistry {
             worker.get_name().to_string(),
             worker
         );
+    }
+
+    async fn load(&mut self) {
+        let config = registrar::read().await;
+
+        for client_config in config.clients.into_iter() {
+            let client = ClientKind::from(client_config);
+            let client = match client {
+                Some(client) => client,
+                None => continue,
+            };
+            self.register(Box::new(client));
+        }
     }
 }

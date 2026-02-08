@@ -1,6 +1,5 @@
 mod dto;
 
-use std::any::Any;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use crate::client::Client;
