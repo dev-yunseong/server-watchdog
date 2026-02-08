@@ -90,8 +90,8 @@ impl Worker for TelegramClient {
         }
     }
 
-    fn interval() -> i32 {
-        5
+    fn interval_ms() -> i32 {
+        5000
     }
 }
 
