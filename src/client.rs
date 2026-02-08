@@ -7,7 +7,7 @@ use crate::core::registrar::config::ClientConfig;
 mod telegram_client;
 
 #[async_trait]
-pub  trait Client : Worker {
+pub  trait Client : Worker + Clone {
     async fn send_message(&self, chat_id: &str, data: &str) -> bool;
     fn set_callback(&mut self, callback: impl Fn(&str, &str) + 'static + Send + Sync);
 }
@@ -62,6 +62,7 @@ impl Worker for ClientKind {
     }
 }
 
+#[derive(Clone)]
 pub  enum ClientKind {
     Telegram(TelegramClient)
 }

@@ -82,8 +82,6 @@ mod tests {
         let last_client_num = config.clients.len();
         registrar::write(config).await;
 
-
-
         let mut registry = WorkerRegistry::new();
         registry.load().await;
 
@@ -102,7 +100,13 @@ mod tests {
         let mut client = ClientKind::from(
             ClientConfig::new_telegram("name", token.as_str())).unwrap();
 
-        client.set_callback(|chat_id, text| {println!("{chat_id}: {text}")});
+        let client_for_callback = client.clone();
+        client.set_callback(move |chat_id, text| {
+            let chat_id_owned = chat_id.to_string();
+            let text_owned = text.to_string();
+            let value = client_for_callback.clone();
+            tokio::spawn(async move {value.send_message(chat_id_owned.as_str(), format!("echo {chat_id_owned}: {text_owned}").as_str()).await;});
+        });
         registry.register(Box::new(client));
 
         tokio::signal::ctrl_c().await.unwrap();

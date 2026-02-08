@@ -1,5 +1,6 @@
 mod dto;
 
+use std::sync::Arc;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use crate::client::Client;
@@ -9,18 +10,19 @@ use log::{debug, error};
 use crate::client::telegram_client::dto::{Message, TelegramResponse, Update};
 use crate::core::Worker;
 
+#[derive(Clone)]
 pub struct TelegramClient {
     name: String,
-    api_client: ApiClient,
+    api_client: Arc<ApiClient>,
     offset: i64,
-    callback: Option<Box<dyn Fn(&str, &str) + Send + Sync>>
+    callback: Option<Arc<dyn Fn(&str, &str) + Send + Sync>>
 }
 
 impl TelegramClient {
     pub fn new(name: String, token: String) -> Self {
         Self {
             name,
-            api_client: ApiClient::new(format!("https://api.telegram.org/bot{token}")),
+            api_client: Arc::new(ApiClient::new(format!("https://api.telegram.org/bot{token}"))),
             callback: None,
             offset: 0
         }
@@ -66,7 +68,7 @@ impl Client for TelegramClient {
     }
 
     fn set_callback(&mut self, callback: impl Fn(&str, &str) + 'static  + Send + Sync) {
-        self.callback = Some(Box::new(callback))
+        self.callback = Some(Arc::new(callback))
     }
 }
 
@@ -93,7 +95,7 @@ impl Worker for TelegramClient {
                 cb(message.chat.id.to_string().as_str(), text.as_str());
             }
         }
-        
+
         true
     }
 
