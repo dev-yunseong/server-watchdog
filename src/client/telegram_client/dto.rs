@@ -3,7 +3,20 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct SendMessageDto {
     chat_id: String,
-    text: String
+    text: String,
+    reply_markup: Option<ReplyMarkup>
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ReplyMarkup {
+    pub inline_keyboard: Vec<InlineKeyboardButton>
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct InlineKeyboardButton {
+    pub text: String,
+    pub url: Option<String>,
+    pub callback_data: Option<String>
 }
 
 #[derive(Deserialize)]
@@ -15,10 +28,11 @@ pub struct TelegramResponse<T> {
 }
 
 impl SendMessageDto {
-    pub fn new(chat_id: &str, text: &str) -> Self {
+    pub fn new(chat_id: &str, text: &str, reply_markup: Option<ReplyMarkup>) -> Self {
         Self {
             chat_id: chat_id.to_string(),
-            text: text.to_string()
+            text: text.to_string(),
+            reply_markup
         }
     }
 }
@@ -37,7 +51,19 @@ pub struct Message {
 pub struct Update {
     pub update_id: i64,
     pub message: Option<Message>,
-    pub edited_message: Option<Message>
+    pub edited_message: Option<Message>,
+    pub callback_query: Option<CallbackQuery>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CallbackQuery {
+    pub id: String,
+    pub from: User,
+    pub message: Option<Message>,
+    pub inline_message_id: Option<String>,
+    pub chat_instance: String,
+    pub data: Option<String>,
+    pub game_short_name: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -1,4 +1,4 @@
-mod dto;
+pub mod dto;
 
 use std::sync::Arc;
 use anyhow::{anyhow, Result};
@@ -54,11 +54,11 @@ impl TelegramClient {
 
 #[async_trait]
 impl Client for TelegramClient {
-    async fn send_message(&self, chat_id: &str, data: &str) -> bool {
+    async fn send_message_direct(&self, send_message_dto: SendMessageDto) -> bool {
         let response = self.api_client
             .post_json::<SendMessageDto, Message> (
                 "sendMessage",
-                &SendMessageDto::new(chat_id, data), None, None).await;
+                &send_message_dto, None, None).await;
 
         if response.is_err() {
             error!("[Err]: {}", response.err().unwrap().to_string());
