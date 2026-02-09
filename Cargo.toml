@@ -1,6 +1,6 @@
 [package]
 name = "server-watchdog"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 authors = ["Yunseong Jeong <me@yunseong.dev>"]
 readme = "README.md"
