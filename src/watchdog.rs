@@ -7,16 +7,17 @@ use crate::watchdog::WatchdogKind::{Http};
 pub mod server;
 
 #[async_trait]
-trait Watchdog {
+pub trait Watchdog {
     async fn health_check(&self) -> Health;
     fn kill(&self);
+    fn get_server_name(&self) -> &str;
 }
 
 pub enum Health {
     Running, Dead, Drowning, Unknown
 }
 
-enum WatchdogKind {
+pub enum WatchdogKind {
     Http(HttpWatchdog)
 }
 
@@ -31,6 +32,12 @@ impl Watchdog for WatchdogKind {
     fn kill(&self) {
 
     }
+
+    fn get_server_name(&self) -> &str {
+        match self {
+            Http(checker) => checker.get_server_name()
+        }
+    }
 }
 
 pub struct HttpWatchdog {
@@ -39,7 +46,7 @@ pub struct HttpWatchdog {
 }
 
 impl HttpWatchdog {
-    fn new(server: Server) -> Self{
+    pub fn new(server: Server) -> Self{
         Self {
             server,
             client: Client::new()
@@ -82,5 +89,9 @@ impl Watchdog for HttpWatchdog {
                 }
             }
         );
+    }
+
+    fn get_server_name(&self) -> &str {
+        self.server.name.as_str()
     }
 }

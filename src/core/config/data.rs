@@ -15,7 +15,7 @@ impl Config {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub  struct ClientConfig {
     pub  name: String,
     pub  kind: String, // ex: telegram

@@ -4,6 +4,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use tokio::task::JoinHandle;
 use crate::core::config;
+use crate::core::config::ClientConfig;
 
 #[async_trait]
 pub trait Worker: Send {
@@ -49,10 +50,8 @@ impl WorkerRegistry {
         self.handles.remove(key);
     }
 
-    pub async fn load(&mut self) {
-        let config = config::read().await;
-
-        for client_config in config.clients.into_iter() {
+    pub fn register_batch(&mut self, client_configs: Vec<ClientConfig>) {
+        for client_config in client_configs.into_iter() {
             let client = ClientKind::from(client_config);
             let client = match client {
                 Some(client) => client,
@@ -60,6 +59,11 @@ impl WorkerRegistry {
             };
             self.register(Box::new(client));
         }
+    }
+
+    pub async fn load(&mut self) {
+        let config = config::read().await;
+        self.register_batch(config.clients);
     }
 }
 
