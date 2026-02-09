@@ -8,7 +8,7 @@ use crate::core::config::ClientConfig;
 mod telegram_client;
 
 #[async_trait]
-pub  trait Client : Worker + Clone {
+pub trait Client : Worker + Clone {
     async fn send_message(&self, chat_id: &str, data: &str) -> bool;
     fn subscribe(&mut self) -> Receiver<(String, String)>;
 }
@@ -64,6 +64,6 @@ impl Worker for ClientKind {
 }
 
 #[derive(Clone)]
-pub  enum ClientKind {
+pub enum ClientKind {
     Telegram(TelegramClient)
 }

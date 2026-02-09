@@ -16,10 +16,10 @@ impl Config {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub  struct ClientConfig {
-    pub  name: String,
-    pub  kind: String, // ex: telegram
-    pub  token: Option<String>
+pub struct ClientConfig {
+    pub name: String,
+    pub kind: String, // ex: telegram
+    pub token: Option<String>
 }
 
 impl ClientConfig {
