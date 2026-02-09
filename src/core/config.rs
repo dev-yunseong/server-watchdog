@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use tokio::fs;
 pub use data::*;
 
-pub  async fn init() {
+pub async fn init() {
     let directory_path = get_directory_path()
         .expect("Fail to find directory");
 
@@ -24,7 +24,21 @@ pub  async fn init() {
     }
 }
 
-pub  async fn read() -> Config {
+pub async fn add_client(client_config: ClientConfig) {
+    init().await;
+    let mut config = read().await;
+    config.clients.push(client_config);
+    write(config).await;
+}
+
+pub async fn add_server(server_config: ServerConfig) {
+    init().await;
+    let mut config = read().await;
+    config.servers.push(server_config);
+    write(config).await;
+}
+
+pub async fn read() -> Config {
     let config_path = get_config_path()
         .expect("Fail to find config path");
     let config = fs::read_to_string(config_path).await
@@ -34,7 +48,7 @@ pub  async fn read() -> Config {
         .expect("Fail to deserialize")
 }
 
-pub  async fn write(config: Config) {
+pub async fn write(config: Config) {
     let directory_path = get_directory_path()
         .expect("Fail to find directory");
 
@@ -46,7 +60,7 @@ pub  async fn write(config: Config) {
         .expect("Fail to write config");
 }
 
-pub  async fn remove() {
+pub async fn remove() {
     let directory_path = get_directory_path()
         .expect("Fail to find directory");
     fs::remove_dir_all(directory_path)

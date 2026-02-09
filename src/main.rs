@@ -1,8 +1,12 @@
+use clap::Parser;
 use server_manager::core::app::App;
+use server_manager::core::cli::Cli;
 
 #[tokio::main]
 async fn main() {
+    let cli = Cli::parse();
+
     App::init().await;
-    let app = App::global();
-    tokio::signal::ctrl_c().await.unwrap();
+
+    cli.command.run().await;
 }
