@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
-use crate::client::ClientKind;
-use crate::core::config;
+use log::info;
+use crate::client::{Client, ClientKind};
+use crate::core::{command_handler, config};
 use crate::core::worker::{Worker, WorkerRegistry};
 use crate::watchdog::server::Server;
 use crate::watchdog::{HttpWatchdog, Watchdog, WatchdogKind};
@@ -9,7 +10,6 @@ use crate::watchdog::WatchdogKind::Http;
 
 pub struct App {
     worker_registry: WorkerRegistry,
-    client_registry: HashMap<String, ClientKind>,
     watchdog_registry: HashMap<String, WatchdogKind>
 }
 
@@ -32,17 +32,17 @@ impl App {
         let config = config::read().await;
 
         let mut worker_registry = WorkerRegistry::new();
-
-        let mut client_registry = HashMap::new();
         let mut watchdog_registry = HashMap::new();
 
-        for client_config in config.clients.clone().into_iter() {
-            let client = match ClientKind::from(client_config) {
+        for client_config in config.clients.into_iter() {
+            let mut client = match ClientKind::from(client_config) {
                 Some(value) => value,
                 None => continue
             };
-            client_registry.insert(client.get_name().to_string(), client);
+            command_handler::attach_handle(client.clone(), client.subscribe()).await;
+            worker_registry.register(Box::new(client));
         }
+        info!("[App] Info: clients are loaded");
 
         for server_config in config.servers.into_iter() {
             let server = Server::from(server_config);
@@ -50,11 +50,10 @@ impl App {
             watchdog_registry.insert(watchdog.get_server_name().to_string(), watchdog);
         }
 
-        worker_registry.register_batch(config.clients);
+        info!("[App] Info: servers are loaded");
 
         App {
             worker_registry,
-            client_registry,
             watchdog_registry
         }
     }

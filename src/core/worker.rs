@@ -25,22 +25,6 @@ impl WorkerRegistry {
         }
     }
 
-    fn register(&mut self, mut worker: Box<dyn Worker>) {
-        let key = worker.get_name().to_string();
-        let handle = tokio::spawn(async move {
-
-            let mut interval = tokio::time::interval(Duration::from_millis(worker.interval() as u64));
-
-            loop {
-                interval.tick().await;
-                if !worker.on_tick().await {
-                    break;
-                }
-            }
-        });
-        self.handles.insert(key, handle);
-    }
-
     fn stop(&mut self, key: &str) {
         let handle = match self.handles.get_mut(key) {
             Some(handle) => handle,
@@ -59,6 +43,21 @@ impl WorkerRegistry {
             };
             self.register(Box::new(client));
         }
+    }
+
+    pub fn register(&mut self, mut worker: Box<dyn Worker>) {
+        let key = worker.get_name().to_string();
+        let handle = tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_millis(worker.interval() as u64));
+
+            loop {
+                interval.tick().await;
+                if !worker.on_tick().await {
+                    break;
+                }
+            }
+        });
+        self.handles.insert(key, handle);
     }
 
     pub async fn load(&mut self) {

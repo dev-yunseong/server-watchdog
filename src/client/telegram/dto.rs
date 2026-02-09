@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct SendMessageDto {
     chat_id: String,
     text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     reply_markup: Option<ReplyMarkup>
 }
 
@@ -15,7 +16,9 @@ pub struct ReplyMarkup {
 #[derive(Serialize, Deserialize)]
 pub struct InlineKeyboardButton {
     pub text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub callback_data: Option<String>
 }
 
@@ -40,10 +43,12 @@ impl SendMessageDto {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
     pub message_id: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub message_thread_id: Option<i64>,
     pub from: User,
     pub date: i64,
     pub chat: Chat,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>
 }
 

@@ -56,7 +56,7 @@ impl TelegramClient {
 impl Client for TelegramClient {
     async fn send_message_direct(&self, send_message_dto: SendMessageDto) -> bool {
         let response = self.api_client
-            .post_json::<SendMessageDto, Message> (
+            .post_json::<SendMessageDto, TelegramResponse<Message>> (
                 "sendMessage",
                 &send_message_dto, None, None).await;
 
@@ -94,14 +94,21 @@ impl Worker for TelegramClient {
         };
 
         for update in updates {
-            if update.message.is_none() {continue}
-            let message = update.message.unwrap();
-            if message.text.is_none() { continue }
-            let text = message.text.unwrap();
+            let message = if let Some(msg) = update.message {
+                (msg.chat.id.to_string(), msg.text.unwrap_or("".to_string()))
+            } else if let Some(cb) = update.callback_query {
+                let chat_id = match cb.message {
+                    Some(message) => message.chat.id.to_string(),
+                    None => continue
+                };
+                let text = cb.data.clone().unwrap_or_default();
+                (chat_id, text)
+            } else {
+                continue;
+            };
 
             if let Some(tx) = &self.tx {
-                let chat_id = message.chat.id.to_string();
-                if let Err(e) = tx.send((chat_id, text)) {
+                if let Err(e) = tx.send(message) {
                     warn!("[TelegramClient] Err: {}", e);
                 }
             }
