@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use tokio::sync::broadcast::Receiver;
 use crate::client::ClientKind::Telegram;
 use crate::client::telegram_client::TelegramClient;
-use crate::core::Worker;
+use crate::core::worker::Worker;
 use crate::core::config::ClientConfig;
 
 mod telegram_client;

@@ -7,10 +7,9 @@ use crate::client::Client;
 use rust_api_client::api::ApiClient;
 use dto::SendMessageDto;
 use log::{debug, error, warn};
-use tokio::sync::broadcast;
-use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::sync::broadcast::{self, Receiver, Sender};
 use crate::client::telegram_client::dto::{Message, TelegramResponse, Update};
-use crate::core::Worker;
+use crate::core::worker::Worker;
 
 #[derive(Clone)]
 pub struct TelegramClient {
