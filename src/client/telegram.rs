@@ -51,10 +51,7 @@ impl TelegramClient {
             }
         }
     }
-}
 
-#[async_trait]
-impl Client for TelegramClient {
     async fn send_message_direct(&self, send_message_dto: SendMessageDto) -> bool {
         let response = self.api_client
             .post_json::<SendMessageDto, TelegramResponse<Message>> (
@@ -67,6 +64,14 @@ impl Client for TelegramClient {
         }
 
         true
+    }
+}
+
+#[async_trait]
+impl Client for TelegramClient {
+
+    async fn send_message(&self, chat_id: &str, data: &str) -> bool {
+        self.send_message_direct(SendMessageDto::new(chat_id, data, None)).await
     }
 
     fn subscribe(&mut self) -> Receiver<(String, String)> {

@@ -10,10 +10,7 @@ use crate::core::config::ClientConfig;
 
 #[async_trait]
 pub trait Client : Worker + Clone {
-    async fn send_message(&self, chat_id: &str, data: &str) -> bool {
-        self.send_message_direct(SendMessageDto::new(chat_id, data, None)).await
-    }
-    async fn send_message_direct(&self, send_message_dto: SendMessageDto) -> bool;
+    async fn send_message(&self, chat_id: &str, data: &str) -> bool;
     fn subscribe(&mut self) -> Receiver<(String, String)>;
 }
 
@@ -31,11 +28,12 @@ impl ClientKind {
 
 #[async_trait]
 impl Client for ClientKind {
-    async fn send_message_direct(&self, send_message_dto: SendMessageDto) -> bool {
+    async fn send_message(&self, chat_id: &str, data: &str) -> bool {
         match self {
-            Telegram(c) => c.send_message_direct(send_message_dto).await
+            Telegram(c) => c.send_message(chat_id, data).await
         }
     }
+
 
     fn subscribe(&mut self) -> Receiver<(String, String)> {
         match self {
