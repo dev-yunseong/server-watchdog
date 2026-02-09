@@ -3,8 +3,10 @@ name = "server-watchdog"
 version = "0.0.1"
 edition = "2024"
 authors = ["Yunseong Jeong <me@yunseong.dev>"]
+readme = "README.md"
 description = "A server monitoring and remote control tool via messenger."
 license = "MIT"
+repository = "https://github.com/dev-yunseong/server-watchdog"
 
 [dependencies]
 anyhow = "1.0.101"
