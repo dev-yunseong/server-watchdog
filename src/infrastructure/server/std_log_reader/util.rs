@@ -1,4 +1,5 @@
 use derive_new::new;
+use log::warn;
 use tokio::process::Command;
 
 #[derive(new)]
@@ -24,11 +25,15 @@ impl SystemCommandExecutor {
             .output()
             .await?;
 
+        let stderr_output = String::from_utf8_lossy(&output.stderr);
+        if !stderr_output.is_empty() {
+            warn!("[{} stderr]: {}", cmd, stderr_output);
+        }
+
         if output.status.success() {
             Ok(String::from_utf8_lossy(&output.stdout).to_string())
         } else {
-            let err_msg = String::from_utf8_lossy(&output.stderr);
-            Err(std::io::Error::new(std::io::ErrorKind::Other, err_msg))
+            Err(std::io::Error::new(std::io::ErrorKind::Other, stderr_output.to_string()))
         }
     }
 }

@@ -1,6 +1,6 @@
 mod util;
 
-use log::error;
+use log::{debug, error, trace};
 use crate::domain::server::Server;
 use crate::infrastructure::server::std_log_reader::util::SystemCommandExecutor;
 
@@ -16,7 +16,9 @@ impl StdLogReader {
         }
     }
     pub async fn read(&self, server: &Server, n: i32) -> Option<String> {
+        trace!("StdLogReader::read for server: {}, n: {}", server.name, n);
         if let Some(log_command) = server.log_command.as_ref() {
+            debug!("log_command: {:?}", log_command);
             let n_str = n.to_string();
 
             let mut args: Vec<&str> = log_command[1..]
@@ -25,6 +27,7 @@ impl StdLogReader {
                 .collect();
 
             let command = log_command[0].as_str();
+            debug!("command: {}", command);
             match command {
                 "docker" => {
                     args.push("-n");
@@ -35,11 +38,15 @@ impl StdLogReader {
                     args.insert(1, &n_str);
                 }
             }
+            debug!("args: {:?}", &args);
+            let full_command = format!("{} {}", command, args.join(" "));
+            debug!("Executing command: {}", full_command);
 
             let result = self.system_command_executor.capture_output(
                 log_command[0].as_str(),
                 &args
             ).await;
+            debug!("result: {:?}", &result);
 
             match result {
                 Ok(str) => Some(str),
