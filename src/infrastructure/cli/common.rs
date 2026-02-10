@@ -1,9 +1,11 @@
 use clap::{Parser, Subcommand};
 use crate::application::client::ClientLoader;
+use crate::application::handler::MessageHandler;
 use crate::infrastructure::cli::client::ClientCommands;
 use crate::infrastructure::cli::server::ServerCommands;
-use crate::infrastructure::client::ClientManager;
+use crate::infrastructure::client::{ClientManager, MessageAdapter};
 use crate::infrastructure::config::{ClientConfigAdapter, ServerConfigAdapter};
+use crate::infrastructure::handler::{EchoHandler};
 
 #[derive(Parser)]
 pub struct Cli {
@@ -41,7 +43,17 @@ impl Commands {
             Commands::Run => {
                 let mut client_loader = ClientManager::new();
                 client_loader.load_clients().await;
-                client_loader.run().await;
+                let mut rx = client_loader.run().await;
+                let handler = EchoHandler::new(
+                    Box::new(MessageAdapter::new(Box::new(client_loader)))
+                );
+                tokio::spawn(async move {
+                    loop {
+                        if let Some(message) = rx.recv().await {
+                            handler.handle(message).await;
+                        }
+                    }
+                });
                 println!("=== Run ===");
                 tokio::signal::ctrl_c().await.unwrap();
             }
