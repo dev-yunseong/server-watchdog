@@ -2,7 +2,17 @@
 
 A server monitoring and remote control tool via messenger.
 
-## Usage
+## Installation
+
+To build the project, you need Rust and Cargo installed. If you don't have them, you can install them from [rust-lang.org](https://www.rust-lang.org/tools/install).
+
+Once Rust and Cargo are installed, clone the repository and build the project:
+
+```bash
+cargo install server-watchdog 
+```
+
+## Configuration
 
 ### Server Management
 
@@ -35,6 +45,22 @@ To list the currently configured clients:
 ```bash
 server-watchdog client list
 ```
+
+## Usage
+
+Once the watchdog is running, you can interact with it through the configured messenger client (e.g., Telegram).
+
+### Available Commands
+
+- `/logs <server_name> <lines>`: Fetches the last `<lines>` of logs from the specified server.
+
+  - `server_name`: The name you assigned to the server during configuration.
+  - `lines`: The number of log lines to retrieve.
+
+  Example:
+  ```
+  /logs my-web-server 100
+  ```
 
 ### Running the Watchdog
 
