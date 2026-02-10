@@ -23,7 +23,20 @@ impl MessageGateway for MessageAdapter {
     async fn send_message(&self, client_name: &str, chat_id: &str, message: &str) {
         let client = self.client_loader.find(client_name)
             .expect(format!("client({client_name}) is not available").as_str());
-        client.send_message(chat_id, message).await;
+
+        let total_len = message.len();
+        
+        let mut cut_length = 0;
+        
+        while cut_length < total_len {
+            let end = std::cmp::min(cut_length + 4000, total_len);
+            let chunk = &message[cut_length..end];
+            
+            client.send_message(chat_id, chunk).await;
+            
+            cut_length = end;
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        }
     }
 }
 
