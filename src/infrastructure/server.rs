@@ -1,70 +1,93 @@
-use async_trait::async_trait;
-use log::{error, info};
-use reqwest::Client;
-use crate::application::server::{ServerManager, ServerRepository};
-use crate::domain::server::Health;
+mod http_server_client;
+mod std_log_reader;
 
-struct HttpServerManager {
-    server_repository: Box<dyn ServerRepository>,
-    client: Client
+use std::collections::HashMap;
+use std::iter::Map;
+use async_trait::async_trait;
+use crate::application::server::{ServerManager, ServerRepository};
+use crate::domain::server::{Health, Server};
+use crate::infrastructure::config;
+use crate::infrastructure::server::http_server_client::HttpServerClient;
+use crate::infrastructure::server::std_log_reader::StdLogReader;
+
+pub struct ConfigServerRepository {
+    servers: HashMap<String, Server>
 }
 
-impl HttpServerManager {
+impl ConfigServerRepository {
+    
+    pub fn new() -> Self {
+        Self {
+            servers: HashMap::new()
+        }
+    }
+    
+    pub async fn load(&mut self) {
+        
+        let config = config::read().await;
+        let servers: Vec<Server> = config.servers
+            .into_iter()
+            .map(|config| { Server::from(config) })
+            .collect();
+
+        for server in servers {
+            self.servers
+                .insert(
+                    server.name.to_string(), 
+                    server);
+        }
+    }
+}
+
+impl ServerRepository for ConfigServerRepository {
+    
+    fn find(&self, name: &str) -> Option<&Server> {
+        self.servers.get(name)
+    }
+
+    fn find_all(&self) -> Vec<&Server> {
+        self.servers.values().collect()
+    }
+}
+
+pub struct GeneralServerManager {
+    server_repository: Box<dyn ServerRepository>,
+    http_server_client: HttpServerClient,
+    std_log_reader: StdLogReader
+}
+
+impl GeneralServerManager {
     pub fn new(server_repository: Box<dyn ServerRepository>) -> Self {
         Self {
             server_repository,
-            client: Client::new()
+            http_server_client: HttpServerClient::new(),
+            std_log_reader: StdLogReader::new()
         }
     }
 }
 
 #[async_trait]
-impl ServerManager for HttpServerManager {
-    
+impl ServerManager for GeneralServerManager {
     async fn kill(&self, name: &str) -> bool {
         let server = match self.server_repository.find(name) {
             Some(s) => s,
             None => return false
         };
         
-        let kill_url = match server.get_kill_url() {
-            Some(value) => value,
-            None => return false
-        };
-
-        let client = self.client.clone();
-
-        if let Err(e) = client.get(kill_url).send().await {
-            error!("[HttpWatchdog] Err: Kill request failed {}", e);
-            false
-        } else {
-            info!("[HttpWatchdog] Info: Kill signal sent successfully");
-            true
-        }
-
+        self.http_server_client.kill(server).await
     }
 
     async fn healthcheck(&self, name: &str) -> Health {
-
         let server = match self.server_repository.find(name) {
             Some(s) => s,
             None => return Health::Unknown
         };
 
+        self.http_server_client.healthcheck(server).await
+    }
 
-        let health_check_url = match server.get_health_check_url() {
-            Some(value) => value,
-            None => return Health::Unknown
-        };
-
-        let response = self.client
-            .get(health_check_url)
-            .send()
-            .await;
-
-        match response {
-            Ok(_) => Health::Running,
-            Err(_) => Health::Dead
-        }
+    async fn logs(&self, name: &str, n: i32) -> Option<String> {
+        let server = self.server_repository.find(name)?;
+        self.std_log_reader.read(server, n).await
     }
 }

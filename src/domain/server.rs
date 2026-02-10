@@ -9,6 +9,7 @@ pub struct Server {
     port: i16,
     health_check_path: Option<String>,
     kill_path: Option<String>,
+    pub log_command: Option<Vec<String>>
 }
 
 impl Server {
@@ -30,13 +31,20 @@ impl Server {
     }
 
     pub fn from(config: ServerConfig) -> Self {
+        let log_command = if let Some(raw_command) = config.log_command {
+            Some(raw_command.split_whitespace().map(|ref_str|{String::from(ref_str)}).collect())
+        } else { 
+            None
+        };
+        
         Self {
             name: config.name,
             proto: config.proto,
             host: config.host,
             port:config.port,
             health_check_path: config.health_check_path,
-            kill_path: config.kill_path
+            kill_path: config.kill_path,
+            log_command
         }
     }
 }

@@ -40,17 +40,19 @@ pub struct ServerConfig {
     pub port: i16,
     pub health_check_path: Option<String>,
     pub kill_path: Option<String>,
+    pub log_command: Option<String>,
 }
 
 impl ServerConfig {
-    pub fn new(name: &str, proto: &str, host: &str, port: i16, health_check_path: Option<String>, kill_path: Option<String>) -> Self {
+    pub fn new(name: String, proto: String, host: String, port: i16, health_check_path: Option<String>, kill_path: Option<String>, log_command: Option<String>,) -> Self {
         Self {
             name: String::from(name),
             proto: String::from(proto),
             host: String::from(host),
             port,
             health_check_path,
-            kill_path
+            kill_path,
+            log_command
         }
     }
 }
