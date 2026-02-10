@@ -9,6 +9,13 @@ use crate::application::server::ServerManager;
 use crate::domain::client::Message;
 use crate::infrastructure::handler::command::Command;
 
+const INVALID_COMMAND_MESSAGE: &str = r#"Invalid or unknown command.
+
+Available commands:
+- /logs <server_name> <lines>
+  Fetches the last <lines> of logs from the specified server.
+  Example: /logs main 100"#;
+
 #[derive(new)]
 pub struct EchoHandler {
     message_gateway: Box<dyn MessageGateway>,
@@ -48,7 +55,7 @@ impl MessageHandler for GeneralHandler {
                 self.server_manager.logs(name.as_str(), n).await
                     .unwrap_or(String::from("Logs are not available."))
             },
-            Command::Nothing => String::from("command is invalid")
+            Command::Nothing => String::from(INVALID_COMMAND_MESSAGE)
         };
         debug!("response: {}", &response);
 
