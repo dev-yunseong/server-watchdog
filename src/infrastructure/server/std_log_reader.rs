@@ -24,8 +24,17 @@ impl StdLogReader {
                 .map(|s| s.as_str())
                 .collect();
 
-            args.insert(0, "-n");
-            args.insert(1, &n_str);
+            let command = log_command[0].as_str();
+            match command {
+                "docker" => {
+                    args.push("-n");
+                    args.push(&n_str);
+                }
+                _ => {
+                    args.insert(0, "-n");
+                    args.insert(1, &n_str);
+                }
+            }
 
             let result = self.system_command_executor.capture_output(
                 log_command[0].as_str(),
