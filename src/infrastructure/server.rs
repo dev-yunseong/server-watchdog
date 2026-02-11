@@ -80,7 +80,7 @@ impl ServerManager for GeneralServerManager {
     async fn healthcheck(&self, name: &str) -> Health {
         let server = match self.server_repository.find(name) {
             Some(s) => s,
-            None => return Health::Unknown
+            None => return Health::Unknown(format!("Fail to found server: '{}'", name))
         };
 
         self.http_server_client.healthcheck(server).await

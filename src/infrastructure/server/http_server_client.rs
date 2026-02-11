@@ -35,10 +35,9 @@ impl HttpServerClient {
     }
 
     pub async fn healthcheck(&self, server: &Server) -> Health {
-
         let health_check_url = match server.get_health_check_url() {
             Some(value) => value,
-            None => return Health::Unknown
+            None => return Health::Unknown(String::from("Healthcheck path is undefined"))
         };
 
         let response = self.client
