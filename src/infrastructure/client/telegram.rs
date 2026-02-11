@@ -1,6 +1,7 @@
 pub mod dto;
 
 use std::sync::Arc;
+use std::time::Duration;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use dto::SendMessageDto;
@@ -99,7 +100,8 @@ impl Worker for TelegramClient {
             },
             Err(e) => {
                 error!("[TelegramClient] Err: {e}");
-                return false;
+                tokio::time::sleep(Duration::from_secs(5)).await;
+                return true;
             }
         };
         debug!("{} updates received", updates.len());
@@ -128,7 +130,6 @@ impl Worker for TelegramClient {
                 }
             }
         }
-
         true
     }
 
