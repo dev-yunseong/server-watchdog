@@ -2,7 +2,7 @@ use clap::Subcommand;
 use log::{debug, trace};
 use crate::application::config::ClientConfigUseCase;
 use crate::domain::config::ClientConfig;
-use crate::infrastructure::cli::util::{read_string, read_string_option};
+use crate::infrastructure::cli::util::{read_string, read_string_option, FormatChecker};
 
 #[derive(Subcommand)]
 #[derive(Debug)]
@@ -17,9 +17,9 @@ impl ClientCommands {
         match self {
             ClientCommands::Add => {
                 debug!("add client");
-                let name = read_string("Name").await;
-                let kind = read_string("kind (ex: telegram)").await;
-                let token = read_string_option("Token").await;
+                let name = read_string("Name", FormatChecker::Name).await;
+                let kind = read_string("kind (ex: telegram)", FormatChecker::Name).await;
+                let token = read_string_option("Token", FormatChecker::NotAllowWhitespace).await;
 
                 let client = match kind.as_str() {
                     "telegram" => ClientConfig::new_telegram(name.as_str(), token.unwrap().as_str()),

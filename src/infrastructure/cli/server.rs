@@ -3,7 +3,7 @@ use log::{debug, trace};
 use crate::application::config::ServerConfigUseCase;
 use crate::domain::config::ServerConfig;
 use crate::domain::server::Server;
-use crate::infrastructure::cli::util::{read_int, read_string, read_string_option, read_string_option_allow_whitespace};
+use crate::infrastructure::cli::util::{read_int, read_string, read_string_option, FormatChecker};
 use crate::infrastructure::config::ServerConfigAdapter;
 
 #[derive(Subcommand)]
@@ -20,15 +20,14 @@ impl ServerCommands {
             ServerCommands::Add => {
                 debug!("add server");
                 println!("--- Add Server ---");
-                let name = read_string("name").await;
-                let proto = read_string("protocol").await;
-                let host = read_string("host").await;
-                let port = read_int("port").await;
-                let health_check_path = read_string_option("health check path").await;
-                let kill_path = read_string_option("kill path").await;
-                let log_command = read_string_option_allow_whitespace("log command").await;
+                let name = read_string("name", FormatChecker::Name).await;
+                let base_url = read_string_option("base url", FormatChecker::BaseUrl).await;
+                let docker_container_name = read_string_option("docker container name", FormatChecker::NotAllowWhitespace).await;
+                let health_check_path = read_string_option("health check path", FormatChecker::NotAllowWhitespace).await;
+                let kill_path = read_string_option("kill path", FormatChecker::NotAllowWhitespace).await;
+                let log_command = read_string_option("log command", FormatChecker::None).await;
 
-                let config = ServerConfig::new(name, proto, host, port as i16, health_check_path, kill_path, log_command);
+                let config = ServerConfig::new(name, base_url, docker_container_name, health_check_path, kill_path, log_command);
                 debug!("new server config: {:?}", &config);
                 server_config_adapter.add_server(config).await;
             },
@@ -52,11 +51,12 @@ impl ServerCommands {
                         };
 
                         println!(
-                            "=========\nName: {}\nBASE URL: {}\nKill URL: {}\nHealth Check URL: {}\nLog command: {}\n\n",
+                            "=========\nName: {}\nBASE URL: {}\nDocker Container Name: {}\nKill URL: {}\nHealth Check URL: {}\nLog command: {}\n\n",
                             server.name,
-                            server.get_url(),
-                            server.get_kill_url().unwrap_or("None".to_string()),
-                            server.get_health_check_url().unwrap_or("None".to_string()),
+                            server.base_url.as_deref().unwrap_or("None"),
+                            server.docker_container_name.as_deref().unwrap_or("None"),
+                            server.get_kill_url().as_deref().unwrap_or("None"),
+                            server.get_health_check_url().as_deref().unwrap_or("None"),
                             command
                         );
                     }
