@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use crate::domain::server::{Health, Server};
+use crate::domain::server::{health::Health, Server};
 
 pub trait ServerRepository : Send + Sync {
     fn find(&self, name: &str) -> Option<&Server>;

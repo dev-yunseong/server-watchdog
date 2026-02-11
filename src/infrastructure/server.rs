@@ -4,7 +4,7 @@ mod std_log_reader;
 use std::collections::HashMap;
 use async_trait::async_trait;
 use crate::application::server::{ServerManager, ServerRepository};
-use crate::domain::server::{Health, Server};
+use crate::domain::server::{health::Health, Server};
 use crate::infrastructure::config;
 use crate::infrastructure::server::http_server_client::HttpServerClient;
 use crate::infrastructure::server::std_log_reader::StdLogReader;

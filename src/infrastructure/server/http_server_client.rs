@@ -1,6 +1,6 @@
 use log::{error, info};
 use reqwest::Client;
-use crate::domain::server::{Health, Server};
+use crate::domain::server::{health::Health, Server};
 
 pub struct HttpServerClient {
     client: Client

@@ -35,21 +35,19 @@ impl ClientConfig {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ServerConfig {
     pub name: String,
-    pub proto: String,
-    pub host: String,
-    pub port: i16,
+    pub base_url: Option<String>,
+    pub docker_container_name: Option<String>,
     pub health_check_path: Option<String>,
     pub kill_path: Option<String>,
     pub log_command: Option<String>,
 }
 
 impl ServerConfig {
-    pub fn new(name: String, proto: String, host: String, port: i16, health_check_path: Option<String>, kill_path: Option<String>, log_command: Option<String>,) -> Self {
+    pub fn new(name: String, base_url: Option<String>, docker_container_name: Option<String>, health_check_path: Option<String>, kill_path: Option<String>, log_command: Option<String>,) -> Self {
         Self {
             name: String::from(name),
-            proto: String::from(proto),
-            host: String::from(host),
-            port,
+            base_url,
+            docker_container_name,
             health_check_path,
             kill_path,
             log_command
