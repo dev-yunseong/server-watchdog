@@ -1,4 +1,5 @@
 mod common;
+pub mod auth;
 
 use async_trait::async_trait;
 
@@ -6,9 +7,7 @@ use crate::application::config::{ClientConfigUseCase, ServerConfigUseCase};
 use crate::domain::config::{ClientConfig, ServerConfig};
 pub use crate::infrastructure::config::common::{init, read, write};
 
-pub struct ClientConfigAdapter {
-
-}
+pub struct ClientConfigAdapter;
 
 #[async_trait]
 impl ClientConfigUseCase for ClientConfigAdapter {
