@@ -1,5 +1,6 @@
 mod http_server_client;
 mod std_log_reader;
+pub mod util;
 
 use std::collections::HashMap;
 use async_trait::async_trait;

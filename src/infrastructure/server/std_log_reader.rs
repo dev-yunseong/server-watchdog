@@ -1,8 +1,6 @@
-mod util;
-
 use log::{debug, error, trace};
 use crate::domain::server::Server;
-use crate::infrastructure::server::std_log_reader::util::SystemCommandExecutor;
+use crate::infrastructure::server::util::SystemCommandExecutor;
 
 pub struct StdLogReader {
     system_command_executor: SystemCommandExecutor
