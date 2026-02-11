@@ -15,15 +15,15 @@ pub struct Server {
 impl Server {
     pub fn get_health_check_url(&self) -> Option<String> {
         let health_check_path = match &self.health_check_method {
-            HealthCheckMethod::Http(value) => value,
+            HealthCheckMethod::Http(value) => value.trim_start_matches('/'),
             _ => return None
         };
-        Some(format!("{}/{health_check_path}", self.base_url.as_ref()?))
+        Some(format!("{}/{health_check_path}", self.base_url.as_ref()?.trim_end_matches('/')))
     }
 
     pub fn get_kill_url(&self) -> Option<String> {
         let kill_path = self.kill_path.as_ref()?.trim_start_matches('/');
-        Some(format!("{}/{kill_path}", self.base_url.as_ref()?))
+        Some(format!("{}/{kill_path}", self.base_url.as_ref()?.trim_end_matches('/')))
     }
 
     pub fn from(config: ServerConfig) -> Self {
