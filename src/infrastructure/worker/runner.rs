@@ -32,7 +32,7 @@ impl WorkerRunner {
     pub fn run(&mut self, mut worker: Box<dyn Worker>) {
         let key = worker.get_name().to_string();
         let handle = tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_millis(worker.interval() as u64));
+            let mut interval = tokio::time::interval(Duration::from_secs(worker.interval() as u64));
 
             loop {
                 interval.tick().await;

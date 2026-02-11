@@ -11,13 +11,16 @@ pub struct SendMessageDto {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetUpdateDto {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub offset: Option<i64>
+    pub offset: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    timeout: Option<i32>,
 }
 
 impl GetUpdateDto {
     pub fn new(offset: i64) -> Self {
         Self {
-            offset: Some(offset)
+            offset: Some(offset),
+            timeout: Some(30)
         }
     }
 }
