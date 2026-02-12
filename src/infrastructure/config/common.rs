@@ -58,7 +58,7 @@ fn get_config_path() -> Option<PathBuf> {
     Some(config_path)
 }
 
-fn get_directory_path() -> Option<PathBuf> {
+pub fn get_directory_path() -> Option<PathBuf> {
     let mut directory_path = home::home_dir().expect("Fail to find home directory");
     directory_path.push(".server-manager");
     Some(directory_path)

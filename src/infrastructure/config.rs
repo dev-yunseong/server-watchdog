@@ -24,9 +24,7 @@ impl ClientConfigUseCase for ClientConfigAdapter {
     }
 }
 
-pub struct ServerConfigAdapter {
-
-}
+pub struct ServerConfigAdapter;
 
 #[async_trait]
 impl ServerConfigUseCase for ServerConfigAdapter {

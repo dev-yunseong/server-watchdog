@@ -31,15 +31,18 @@ impl MessageHandler for GeneralHandler {
         match message.data.split_whitespace().collect::<Vec<_>>()[..] {
             ["/register", password] => {
                 let response = if self.auth_use_case.validate_password(password.to_string()).await {
-                    self.auth_use_case.register(message.client_name.clone(), message.chat_id.clone()).await;
-                    "Successfully registered."
+                    match self.auth_use_case.register(message.client_name.clone(), message.chat_id.clone()).await {
+                        Ok(_) => String::from("Successfully registered."),
+                        Err(e) => format!("Fail to register: {e}")
+                    }
+
                 } else {
-                    "Invalid password. Usage: /register <password>"
+                    String::from("Invalid password. Usage: /register <password>")
                 };
                 self.message_gateway.send_message(
                     message.client_name.as_str(),
                     message.chat_id.as_str(),
-                    response
+                    response.as_str()
                 )
                     .await
             },
