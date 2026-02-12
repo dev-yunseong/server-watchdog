@@ -92,10 +92,18 @@ impl AuthUseCase for AuthAdapter {
     async fn register(&mut self, client_name: String, identity: String) -> Result<(), Box<dyn Error>> {
         let mut chat_list = self.read()
             .await?;
-        chat_list.chats
-            .push(Chat::new(client_name, identity));
-        self.write(chat_list).await;
-        self.chat_map = None;
+        
+        // Check if the entry already exists to make registration idempotent
+        let already_exists = chat_list.chats.iter().any(|chat| {
+            chat.client_name == client_name && chat.identity == identity
+        });
+        
+        if !already_exists {
+            chat_list.chats.push(Chat::new(client_name, identity));
+            self.write(chat_list).await;
+            self.chat_map = None;
+        }
+        
         Ok(())
     }
 
