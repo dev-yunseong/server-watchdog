@@ -11,7 +11,7 @@ use crate::application::client::{ClientLoader, MessageGateway};
 use crate::application::worker::Worker;
 use crate::domain::client::Message;
 use crate::infrastructure::{client, config};
-use crate::infrastructure::worker::WorkerRunner;
+use crate::application::worker::WorkerRunner;
 
 #[derive(new)]
 pub struct MessageAdapter {

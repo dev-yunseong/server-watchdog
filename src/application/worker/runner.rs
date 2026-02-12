@@ -54,7 +54,7 @@ mod tests {
     use crate::domain::config::{ClientConfig};
     use crate::infrastructure::client;
     use crate::infrastructure::client::common::{Client};
-    use crate::infrastructure::worker::runner::{ WorkerRunner};
+    use crate::application::worker::runner::{ WorkerRunner};
 
     #[tokio::test]
     async fn run_work() {

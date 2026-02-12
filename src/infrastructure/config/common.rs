@@ -14,7 +14,7 @@ pub async fn init() {
     let config_path = directory_path.join("config.json");
 
     if !config_path.exists() {
-        let placeholder = Config::new();
+        let placeholder = Config::new(None);
         let placeholder = serde_json::to_string_pretty(&placeholder)
             .expect("Fail to serialize");
         fs::write(config_path, placeholder).await
@@ -58,7 +58,7 @@ fn get_config_path() -> Option<PathBuf> {
     Some(config_path)
 }
 
-fn get_directory_path() -> Option<PathBuf> {
+pub fn get_directory_path() -> Option<PathBuf> {
     let mut directory_path = home::home_dir().expect("Fail to find home directory");
     directory_path.push(".server-manager");
     Some(directory_path)

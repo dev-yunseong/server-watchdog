@@ -1,5 +1,5 @@
 use log::{debug, trace};
-use crate::infrastructure::handler::command::Command::{HealthCheck, HealthCheckAll, Logs, Nothing};
+use crate::application::handler::command::Command::{HealthCheck, HealthCheckAll, Logs, Nothing};
 
 #[derive(Debug)]
 pub enum Command {
