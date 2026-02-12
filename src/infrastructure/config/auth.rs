@@ -24,6 +24,7 @@ impl AuthAdapter {
     }
 
     pub async fn init(&mut self) {
+        config::init().await;
         let config = config::read().await;
         self.password = config.password;
     }
@@ -78,6 +79,7 @@ impl AuthAdapter {
 #[async_trait]
 impl AuthUseCase for AuthAdapter {
     async fn set_password(&self, password: Option<String>) {
+        config::init().await;
         let mut config = config::read().await;
         config.password = password;
         config::write(config).await;
