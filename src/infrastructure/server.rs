@@ -10,7 +10,6 @@ use crate::domain::config::Config;
 use crate::domain::server::{health::Health, Server};
 use crate::domain::server::health::HealthCheckMethod;
 use crate::infrastructure::common::file_accessor::{get_config_file_accessor, FileAccessor};
-
 use crate::infrastructure::server::docker::DockerHealthChecker;
 use crate::infrastructure::server::http_server_client::HttpServerClient;
 use crate::infrastructure::server::std_log_reader::StdLogReader;
