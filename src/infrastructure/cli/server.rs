@@ -3,7 +3,7 @@ use log::{debug, trace};
 use crate::application::config::ServerConfigUseCase;
 use crate::domain::config::ServerConfig;
 use crate::domain::server::Server;
-use crate::infrastructure::cli::util::{read_int, read_string, read_string_option, FormatChecker};
+use crate::infrastructure::cli::util::{read_string, read_string_option, FormatChecker};
 use crate::infrastructure::config::ServerConfigAdapter;
 
 #[derive(Subcommand)]
