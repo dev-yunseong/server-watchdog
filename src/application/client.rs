@@ -12,7 +12,7 @@ pub trait MessageGateway : Send + Sync {
 
 #[async_trait]
 pub trait ClientLoader : Send + Sync {
-    async fn load_clients(&mut self) -> Result<(), Box<dyn Error>>;
+    async fn load_clients(&mut self) -> Result<(), Box<dyn Error + Send + Sync>>;
     fn find(&self, name: &str) -> Option<&Box<dyn Client>>;
     async fn run(&mut self)-> Receiver<Message>;
 }
