@@ -48,12 +48,27 @@ To list the currently configured clients:
 server-watchdog client list
 ```
 
+### Password Management
+
+To set the password for the bot:
+
+```bash
+server-watchdog password set <password>
+```
+
+You will be prompted to enter the password.
+
+
 ## Usage
 
 Once the watchdog is running, you can interact with it through the configured messenger client (e.g., Telegram).
 
 ### Available Commands
 
+- `/register <password>`: Registers you to use the bot.
+
+  - `password`: The password you set for the bot.
+  
 - `/logs <server_name> <lines>`: Fetches the last `<lines>` of logs from the specified server.
 
   - `server_name`: The name you assigned to the server during configuration.
