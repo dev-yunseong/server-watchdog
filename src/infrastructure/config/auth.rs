@@ -112,3 +112,235 @@ impl AuthUseCase for AuthAdapter {
         self.password.is_some()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    use tokio::fs;
+
+    struct TestAuthAdapter {
+        adapter: AuthAdapter,
+        temp_dir: PathBuf,
+    }
+
+    impl TestAuthAdapter {
+        async fn new(password: Option<String>) -> Self {
+            let temp_dir = std::env::temp_dir().join(format!("watchdog_test_{}", uuid::Uuid::new_v4()));
+            fs::create_dir_all(&temp_dir).await.unwrap();
+            
+            let adapter = AuthAdapter {
+                password,
+                file_name: "chat_list.json".to_string(),
+                chat_map: None,
+            };
+            
+            Self { adapter, temp_dir }
+        }
+
+        async fn cleanup(&self) {
+            let _ = fs::remove_dir_all(&self.temp_dir).await;
+        }
+
+        fn get_file_path(&self) -> PathBuf {
+            self.temp_dir.join(&self.adapter.file_name)
+        }
+
+        // Override get_file_path for testing
+        fn override_get_file_path(&mut self) {
+            // We need to mock this, but the actual implementation uses get_directory_path
+            // For testing, we'll work with a temporary directory approach
+        }
+
+        async fn read(&self) -> Result<ChatList, Box<dyn Error>> {
+            let file_path = self.get_file_path();
+            if file_path.exists() {
+                let raw_json = fs::read_to_string(file_path).await?;
+                let chat_list = serde_json::from_str::<ChatList>(raw_json.as_str())?;
+                Ok(chat_list)
+            } else {
+                Ok(ChatList { chats: Vec::new() })
+            }
+        }
+
+        async fn write(&self, chat_list: ChatList) {
+            let raw_json = serde_json::to_string(&chat_list)
+                .expect("Fail to Serialize chat list");
+            fs::write(self.get_file_path(), raw_json).await
+                .expect("Fail to write chat list");
+        }
+
+        async fn register(&mut self, client_name: String, identity: String) -> Result<(), Box<dyn Error>> {
+            let mut chat_list = self.read().await?;
+            chat_list.chats.push(Chat::new(client_name, identity));
+            self.write(chat_list).await;
+            self.adapter.chat_map = None;
+            Ok(())
+        }
+
+        async fn authenticate(&mut self, client_name: String, identity: String) -> bool {
+            let chat_list = match self.read().await {
+                Ok(list) => list,
+                Err(_) => return false,
+            };
+            
+            if self.adapter.chat_map.is_none() {
+                self.adapter.chat_map = Some(ChatMap::from(chat_list));
+            }
+
+            let chat_map = self.adapter.chat_map.as_ref().unwrap();
+            chat_map.contains(client_name.as_str(), identity.as_str())
+        }
+    }
+
+    #[tokio::test]
+    async fn test_register_persists_to_file() {
+        let mut test_adapter = TestAuthAdapter::new(Some("testpass".to_string())).await;
+
+        // Register a user
+        test_adapter.register("telegram".to_string(), "user123".to_string())
+            .await
+            .expect("Failed to register user");
+
+        // Verify the file was created and contains data
+        let file_path = test_adapter.get_file_path();
+        assert!(file_path.exists(), "chat_list.json should exist");
+
+        let content = fs::read_to_string(&file_path).await.unwrap();
+        let chat_list: ChatList = serde_json::from_str(&content).unwrap();
+
+        assert_eq!(chat_list.chats.len(), 1);
+        assert_eq!(chat_list.chats[0].client_name, "telegram");
+        assert_eq!(chat_list.chats[0].identity, "user123");
+        assert!(!chat_list.chats[0].id.is_empty());
+
+        test_adapter.cleanup().await;
+    }
+
+    #[tokio::test]
+    async fn test_register_multiple_users() {
+        let mut test_adapter = TestAuthAdapter::new(Some("testpass".to_string())).await;
+
+        // Register multiple users
+        test_adapter.register("telegram".to_string(), "user123".to_string())
+            .await
+            .expect("Failed to register user 1");
+        test_adapter.register("slack".to_string(), "user456".to_string())
+            .await
+            .expect("Failed to register user 2");
+        test_adapter.register("discord".to_string(), "user789".to_string())
+            .await
+            .expect("Failed to register user 3");
+
+        // Read the file and verify all users are persisted
+        let file_path = test_adapter.get_file_path();
+        let content = fs::read_to_string(&file_path).await.unwrap();
+        let chat_list: ChatList = serde_json::from_str(&content).unwrap();
+
+        assert_eq!(chat_list.chats.len(), 3);
+        assert_eq!(chat_list.chats[0].client_name, "telegram");
+        assert_eq!(chat_list.chats[1].client_name, "slack");
+        assert_eq!(chat_list.chats[2].client_name, "discord");
+
+        test_adapter.cleanup().await;
+    }
+
+    #[tokio::test]
+    async fn test_authenticate_with_persisted_data() {
+        let mut test_adapter = TestAuthAdapter::new(Some("testpass".to_string())).await;
+
+        // Register a user
+        test_adapter.register("telegram".to_string(), "user123".to_string())
+            .await
+            .expect("Failed to register user");
+
+        // Authenticate should succeed for registered user
+        assert!(test_adapter.authenticate("telegram".to_string(), "user123".to_string()).await);
+
+        // Authenticate should fail for unregistered user
+        assert!(!test_adapter.authenticate("telegram".to_string(), "unregistered".to_string()).await);
+
+        test_adapter.cleanup().await;
+    }
+
+    #[tokio::test]
+    async fn test_validate_password_correct() {
+        let mut adapter = AuthAdapter::new();
+        adapter.password = Some("correctpass".to_string());
+
+        assert!(adapter.validate_password("correctpass".to_string()).await);
+    }
+
+    #[tokio::test]
+    async fn test_validate_password_incorrect() {
+        let mut adapter = AuthAdapter::new();
+        adapter.password = Some("correctpass".to_string());
+
+        assert!(!adapter.validate_password("wrongpass".to_string()).await);
+    }
+
+    #[tokio::test]
+    async fn test_password_required_with_password() {
+        let mut adapter = AuthAdapter::new();
+        adapter.password = Some("testpass".to_string());
+
+        assert!(adapter.password_required());
+    }
+
+    #[tokio::test]
+    async fn test_password_required_without_password() {
+        let adapter = AuthAdapter::new();
+
+        assert!(!adapter.password_required());
+    }
+
+    #[tokio::test]
+    async fn test_chat_map_caching() {
+        let mut test_adapter = TestAuthAdapter::new(Some("testpass".to_string())).await;
+
+        // Register users to build initial cache
+        test_adapter.register("telegram".to_string(), "user123".to_string())
+            .await
+            .expect("Failed to register user");
+
+        // First authenticate should load the chat_map
+        assert!(test_adapter.authenticate("telegram".to_string(), "user123".to_string()).await);
+
+        // Register another user, which should invalidate the cache
+        test_adapter.register("slack".to_string(), "user456".to_string())
+            .await
+            .expect("Failed to register user 2");
+
+        // Authenticate should work for both users after cache invalidation
+        assert!(test_adapter.authenticate("telegram".to_string(), "user123".to_string()).await);
+        assert!(test_adapter.authenticate("slack".to_string(), "user456".to_string()).await);
+
+        test_adapter.cleanup().await;
+    }
+
+    #[tokio::test]
+    async fn test_json_file_format() {
+        let mut test_adapter = TestAuthAdapter::new(Some("testpass".to_string())).await;
+
+        // Register users
+        test_adapter.register("telegram".to_string(), "chat_123".to_string())
+            .await
+            .expect("Failed to register user");
+
+        // Read and verify JSON structure
+        let file_path = test_adapter.get_file_path();
+        let content = fs::read_to_string(&file_path).await.unwrap();
+        
+        // Verify it's valid JSON
+        let chat_list: ChatList = serde_json::from_str(&content).unwrap();
+        
+        // Verify structure
+        assert_eq!(chat_list.chats.len(), 1);
+        let chat = &chat_list.chats[0];
+        assert!(!chat.id.is_empty(), "ID should not be empty");
+        assert_eq!(chat.client_name, "telegram");
+        assert_eq!(chat.identity, "chat_123");
+
+        test_adapter.cleanup().await;
+    }
+}

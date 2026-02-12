@@ -102,3 +102,257 @@ impl GeneralHandler {
             .await;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+    use std::error::Error;
+    use crate::domain::server::health::Health;
+
+    #[derive(Clone)]
+    struct MockMessageGateway {
+        messages: Arc<Mutex<Vec<(String, String, String)>>>,
+    }
+
+    impl MockMessageGateway {
+        fn new() -> Self {
+            Self {
+                messages: Arc::new(Mutex::new(Vec::new())),
+            }
+        }
+
+        fn get_messages(&self) -> Vec<(String, String, String)> {
+            self.messages.lock().unwrap().clone()
+        }
+    }
+
+    #[async_trait]
+    impl MessageGateway for MockMessageGateway {
+        async fn send_message(&self, client_name: &str, chat_id: &str, message: &str) {
+            self.messages
+                .lock()
+                .unwrap()
+                .push((client_name.to_string(), chat_id.to_string(), message.to_string()));
+        }
+    }
+
+    struct MockServerManager;
+
+    #[async_trait]
+    impl ServerManager for MockServerManager {
+        async fn kill(&self, _name: &str) -> bool {
+            false
+        }
+
+        async fn healthcheck(&self, _name: &str) -> Health {
+            Health::Unknown("Unknown".to_string())
+        }
+
+        async fn healthcheck_all(&self) -> Vec<(&str, Health)> {
+            vec![]
+        }
+
+        async fn logs(&self, _name: &str, _n: i32) -> Option<String> {
+            None
+        }
+    }
+
+    #[derive(Clone)]
+    struct MockAuthUseCase {
+        password: Option<String>,
+        registered_users: Arc<Mutex<Vec<(String, String)>>>,
+    }
+
+    impl MockAuthUseCase {
+        fn new(password: Option<String>) -> Self {
+            Self {
+                password,
+                registered_users: Arc::new(Mutex::new(Vec::new())),
+            }
+        }
+
+        fn get_registered_users(&self) -> Vec<(String, String)> {
+            self.registered_users.lock().unwrap().clone()
+        }
+    }
+
+    #[async_trait]
+    impl AuthUseCase for MockAuthUseCase {
+        async fn set_password(&self, _password: Option<String>) {}
+
+        async fn validate_password(&mut self, password: String) -> bool {
+            match &self.password {
+                Some(pwd) => pwd == &password,
+                None => false,
+            }
+        }
+
+        async fn register(&mut self, client_name: String, identity: String) -> Result<(), Box<dyn Error>> {
+            self.registered_users
+                .lock()
+                .unwrap()
+                .push((client_name, identity));
+            Ok(())
+        }
+
+        async fn authenticate(&mut self, client_name: String, identity: String) -> bool {
+            self.registered_users
+                .lock()
+                .unwrap()
+                .contains(&(client_name, identity))
+        }
+
+        fn password_required(&self) -> bool {
+            self.password.is_some()
+        }
+    }
+
+    #[tokio::test]
+    async fn test_register_password_not_required() {
+        let gateway = MockMessageGateway::new();
+        let auth = MockAuthUseCase::new(None);
+        let mut handler = GeneralHandler::new(
+            Box::new(gateway.clone()),
+            Box::new(MockServerManager),
+            Box::new(auth),
+        );
+
+        let message = Message::new(
+            "telegram".to_string(),
+            "user123".to_string(),
+            "/register testpass".to_string(),
+        );
+
+        handler.handle(message).await;
+
+        let messages = gateway.get_messages();
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].2, "Password is not required");
+    }
+
+    #[tokio::test]
+    async fn test_register_valid_password() {
+        let gateway = MockMessageGateway::new();
+        let auth = MockAuthUseCase::new(Some("correctpass".to_string()));
+        let mut handler = GeneralHandler::new(
+            Box::new(gateway.clone()),
+            Box::new(MockServerManager),
+            Box::new(auth.clone()),
+        );
+
+        let message = Message::new(
+            "telegram".to_string(),
+            "user123".to_string(),
+            "/register correctpass".to_string(),
+        );
+
+        handler.handle(message).await;
+
+        let messages = gateway.get_messages();
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].2, "Successfully registered.");
+
+        let registered = auth.get_registered_users();
+        assert_eq!(registered.len(), 1);
+        assert_eq!(registered[0], ("telegram".to_string(), "user123".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_register_invalid_password() {
+        let gateway = MockMessageGateway::new();
+        let auth = MockAuthUseCase::new(Some("correctpass".to_string()));
+        let mut handler = GeneralHandler::new(
+            Box::new(gateway.clone()),
+            Box::new(MockServerManager),
+            Box::new(auth),
+        );
+
+        let message = Message::new(
+            "telegram".to_string(),
+            "user123".to_string(),
+            "/register wrongpass".to_string(),
+        );
+
+        handler.handle(message).await;
+
+        let messages = gateway.get_messages();
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].2, "Invalid password. Usage: /register <password>");
+    }
+
+    #[tokio::test]
+    async fn test_authenticate_registered_user() {
+        let gateway = MockMessageGateway::new();
+        let mut auth = MockAuthUseCase::new(Some("correctpass".to_string()));
+        
+        // Pre-register user
+        auth.register("telegram".to_string(), "user123".to_string()).await.unwrap();
+
+        let mut handler = GeneralHandler::new(
+            Box::new(gateway.clone()),
+            Box::new(MockServerManager),
+            Box::new(auth),
+        );
+
+        let message = Message::new(
+            "telegram".to_string(),
+            "user123".to_string(),
+            "/health".to_string(),
+        );
+
+        handler.handle(message).await;
+
+        let messages = gateway.get_messages();
+        assert_eq!(messages.len(), 1);
+        // Should get a valid response, not a registration prompt
+        assert!(!messages[0].2.contains("Registration required"));
+    }
+
+    #[tokio::test]
+    async fn test_authenticate_unregistered_user() {
+        let gateway = MockMessageGateway::new();
+        let auth = MockAuthUseCase::new(Some("correctpass".to_string()));
+        let mut handler = GeneralHandler::new(
+            Box::new(gateway.clone()),
+            Box::new(MockServerManager),
+            Box::new(auth),
+        );
+
+        let message = Message::new(
+            "telegram".to_string(),
+            "user123".to_string(),
+            "/health".to_string(),
+        );
+
+        handler.handle(message).await;
+
+        let messages = gateway.get_messages();
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].2, "Registration required. Usage: /register <password>");
+    }
+
+    #[tokio::test]
+    async fn test_no_password_allows_all_users() {
+        let gateway = MockMessageGateway::new();
+        let auth = MockAuthUseCase::new(None);
+        let mut handler = GeneralHandler::new(
+            Box::new(gateway.clone()),
+            Box::new(MockServerManager),
+            Box::new(auth),
+        );
+
+        let message = Message::new(
+            "telegram".to_string(),
+            "user123".to_string(),
+            "/health".to_string(),
+        );
+
+        handler.handle(message).await;
+
+        let messages = gateway.get_messages();
+        assert_eq!(messages.len(), 1);
+        // Should get a valid response without registration
+        assert!(!messages[0].2.contains("Registration required"));
+    }
+}
