@@ -146,12 +146,6 @@ mod tests {
             self.temp_dir.join(&self.adapter.file_name)
         }
 
-        // Override get_file_path for testing
-        fn override_get_file_path(&mut self) {
-            // We need to mock this, but the actual implementation uses get_directory_path
-            // For testing, we'll work with a temporary directory approach
-        }
-
         async fn read(&self) -> Result<ChatList, Box<dyn Error>> {
             let file_path = self.get_file_path();
             if file_path.exists() {
@@ -165,9 +159,9 @@ mod tests {
 
         async fn write(&self, chat_list: ChatList) {
             let raw_json = serde_json::to_string(&chat_list)
-                .expect("Fail to Serialize chat list");
+                .expect("Failed to serialize chat list");
             fs::write(self.get_file_path(), raw_json).await
-                .expect("Fail to write chat list");
+                .expect("Failed to write chat list");
         }
 
         async fn register(&mut self, client_name: String, identity: String) -> Result<(), Box<dyn Error>> {
@@ -265,31 +259,44 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_password_correct() {
-        let mut adapter = AuthAdapter::new();
-        adapter.password = Some("correctpass".to_string());
+        let mut adapter = AuthAdapter {
+            password: Some("correctpass".to_string()),
+            file_name: "chat_list.json".to_string(),
+            chat_map: None,
+        };
 
         assert!(adapter.validate_password("correctpass".to_string()).await);
     }
 
     #[tokio::test]
     async fn test_validate_password_incorrect() {
-        let mut adapter = AuthAdapter::new();
-        adapter.password = Some("correctpass".to_string());
+        let mut adapter = AuthAdapter {
+            password: Some("correctpass".to_string()),
+            file_name: "chat_list.json".to_string(),
+            chat_map: None,
+        };
 
         assert!(!adapter.validate_password("wrongpass".to_string()).await);
     }
 
     #[tokio::test]
     async fn test_password_required_with_password() {
-        let mut adapter = AuthAdapter::new();
-        adapter.password = Some("testpass".to_string());
+        let adapter = AuthAdapter {
+            password: Some("testpass".to_string()),
+            file_name: "chat_list.json".to_string(),
+            chat_map: None,
+        };
 
         assert!(adapter.password_required());
     }
 
     #[tokio::test]
     async fn test_password_required_without_password() {
-        let adapter = AuthAdapter::new();
+        let adapter = AuthAdapter {
+            password: None,
+            file_name: "chat_list.json".to_string(),
+            chat_map: None,
+        };
 
         assert!(!adapter.password_required());
     }
