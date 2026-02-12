@@ -6,7 +6,7 @@ use serde::{Serialize};
 use serde::de::DeserializeOwned;
 use tokio::fs;
 use crate::domain::chat::ChatList;
-use crate::domain::config::Config;
+use crate::domain::config::{Config, EventSubscribeList};
 
 #[derive(new)]
 pub struct FileAccessor<T>
@@ -21,7 +21,7 @@ where
     T: Serialize + DeserializeOwned
 {
     pub async fn read(&self)
-        -> Result<T, Box<dyn Error>>
+        -> Result<T, Box<dyn Error + Send + Sync>>
     {
         let file_path = self.get_file_path()?;
 
@@ -34,8 +34,8 @@ where
     }
 
     pub async fn write(&self, data: T)
-        -> Result<(), Box<dyn Error>> {
-        let raw_json = serde_json::to_string(&data)?;
+        -> Result<(), Box<dyn Error + Send + Sync>> {
+        let raw_json = serde_json::to_string_pretty(&data)?;
 
         let directory_path = self.get_directory_path()?;
 
@@ -53,13 +53,13 @@ where
     }
 
     fn get_file_path(&self)
-        -> Result<PathBuf, Box<dyn Error>> {
+        -> Result<PathBuf, Box<dyn Error + Send + Sync>> {
         let mut path = self.get_directory_path()?;
         path.push(self.file_name.as_str());
         Ok(path)
     }
 
-    fn get_directory_path(&self) -> Result<PathBuf, Box<dyn Error>> {
+    fn get_directory_path(&self) -> Result<PathBuf, Box<dyn Error + Send + Sync>> {
         let mut directory_path = home::home_dir()
             .ok_or(anyhow!("Fail to find home directory"))?;
         directory_path.push(".watchdog");
@@ -78,5 +78,12 @@ pub fn get_config_file_accessor() -> FileAccessor<Config> {
     FileAccessor::new(
         String::from("config.json"),
         Box::new(||{Config::new(None)})
+    )
+}
+
+pub fn get_event_subscribe_file_accessor() -> FileAccessor<EventSubscribeList> {
+    FileAccessor::new(
+        String::from("subscribe.json"),
+        Box::new(||{EventSubscribeList::new()})
     )
 }

@@ -28,7 +28,7 @@ impl AuthAdapter {
         self.password = config.password;
     }
 
-    async fn get_chat_map(&mut self) -> Result<&ChatMap, Box<dyn Error>> {
+    async fn get_chat_map(&mut self) -> Result<&ChatMap, Box<dyn Error + Send + Sync>> {
         if self.chat_map.is_none() {
             let list = self.chat_list_file_accessor.read().await?;
             self.chat_map = Some(ChatMap::from(list));
@@ -40,7 +40,7 @@ impl AuthAdapter {
 
 #[async_trait]
 impl AuthUseCase for AuthAdapter {
-    async fn set_password(&self, password: Option<String>) -> Result<(), Box<dyn Error>> {
+    async fn set_password(&self, password: Option<String>) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut config = self.config_file_accessor.read().await?;
         config.password = password;
         self.config_file_accessor.write(config).await?;
@@ -52,7 +52,7 @@ impl AuthUseCase for AuthAdapter {
         config_password.eq(password.as_str())
     }
 
-    async fn register(&mut self, client_name: String, identity: String) -> Result<(), Box<dyn Error>> {
+    async fn register(&mut self, client_name: String, identity: String) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut chat_list = self.chat_list_file_accessor.read()
             .await?;
         
@@ -70,13 +70,14 @@ impl AuthUseCase for AuthAdapter {
         Ok(())
     }
 
-    async fn authenticate(&mut self, client_name: String, identity: String) -> bool {
+    async fn authenticate(&mut self, client_name: String, identity: String) -> Option<String> {
         let chat_map = match self.get_chat_map().await {
             Ok(value) => value,
-            Err(_) => return false
+            Err(_) => return None
         };
 
-        chat_map.contains(client_name.as_str(), identity.as_str())
+        let id = chat_map.get_id(client_name.as_str(), identity.as_str())?;
+        Some(String::from(id))
     }
 
     fn password_required(&self) -> bool {

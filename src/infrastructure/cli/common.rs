@@ -81,10 +81,13 @@ impl Commands {
                 let mut server_repository = ConfigServerRepository::new();
                 server_repository.load().await;
 
+                let event_subscribe = EventConfigAdapter::new();
+                
                 let mut handler = GeneralHandler::new(
                     Box::new(MessageAdapter::new(Box::new(client_loader))),
                     Box::new(GeneralServerManager::new(Box::new(server_repository))),
-                    Box::new(auth_adapter)
+                    Box::new(auth_adapter),
+                    Box::new(event_subscribe)
                 );
 
                 tokio::spawn(async move {

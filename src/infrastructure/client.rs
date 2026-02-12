@@ -61,7 +61,7 @@ impl ClientManager {
 
 #[async_trait]
 impl ClientLoader for ClientManager {
-    async fn load_clients(&mut self) -> Result<(), Box<dyn Error>> {
+    async fn load_clients(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         let clients = self.config_file_accessor.read().await?.clients;
         let clients: Vec<Box<dyn Client>> = clients.into_iter()
             .map(|client_config| {client::from(client_config)})

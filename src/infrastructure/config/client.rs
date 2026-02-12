@@ -18,14 +18,14 @@ impl ClientConfigAdapter {
 
 #[async_trait]
 impl ClientConfigUseCase for ClientConfigAdapter {
-    async fn add_client(&self, client_config: ClientConfig) -> Result<(), Box<dyn Error>> {
+    async fn add_client(&self, client_config: ClientConfig) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut config = self.config_file_accessor.read().await?;
         config.clients.push(client_config);
         self.config_file_accessor.write(config).await?;
         Ok(())
     }
 
-    async fn list_client(&self) -> Result<Vec<ClientConfig>, Box<dyn Error>> {
+    async fn list_client(&self) -> Result<Vec<ClientConfig>, Box<dyn Error + Send + Sync>> {
         let config = self.config_file_accessor.read().await?;
         Ok(config.clients)
     }
