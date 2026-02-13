@@ -28,19 +28,19 @@ impl GeneralEventChecker {
             .map(|event_config|{Event::from(event_config)})
             .collect();
         for event in events {
-            self.check(event.name, event.event_kind);
+            self.check(event);
         }
     }
 
-    fn check(&self, event_name: String, event_kind: EventKind) {
-        match &event_kind {
+    fn check(&self, event: Event) {
+        match &event.event_kind {
             EventKind::Health {server_name: _, keyword: _} => {
                 self.health_event_checker
-                    .check(event_name, event_kind, self.server_manager.clone(), self.tx.clone())
+                    .check(event, self.server_manager.clone(), self.tx.clone())
             },
             EventKind::Log {server_name: _, keyword: _} => {
                 self.log_event_checker
-                    .check(event_name, event_kind, self.server_manager.clone(), self.tx.clone())
+                    .check(event, self.server_manager.clone(), self.tx.clone())
             },
             EventKind::None => return
         }
@@ -48,15 +48,16 @@ impl GeneralEventChecker {
 }
 
 pub trait EventChecker {
-    fn check(&self, event_name: String, event_kind: EventKind, server_manager: Arc<dyn ServerManager>, tx: Sender<EventMessage>);
+    fn check(&self, event: Event, server_manager: Arc<dyn ServerManager>, tx: Sender<EventMessage>);
 }
 
 #[derive(new)]
 pub struct HealthEventChecker;
 
 impl EventChecker for HealthEventChecker {
-    fn check(&self, event_name: String, event_kind: EventKind, server_manager: Arc<dyn ServerManager>, tx: Sender<EventMessage>) {
-        if let EventKind::Health { server_name, keyword } = event_kind {
+    fn check(&self, event: Event, server_manager: Arc<dyn ServerManager>, tx: Sender<EventMessage>) {
+        if let EventKind::Health { server_name, keyword } = event.event_kind {
+            let event_name = event.name;
             tokio::spawn(async move {
                 loop {
                     let health = server_manager.healthcheck(server_name.as_str()).await;
@@ -77,9 +78,10 @@ impl EventChecker for HealthEventChecker {
 pub struct LogEventChecker;
 
 impl EventChecker for LogEventChecker {
-    fn check(&self, event_name: String, event_kind: EventKind, server_manager: Arc<dyn ServerManager>, tx: Sender<EventMessage>) {
+    fn check(&self, event: Event, server_manager: Arc<dyn ServerManager>, tx: Sender<EventMessage>) {
 
-        if let EventKind::Log {server_name, keyword} = event_kind {
+        if let EventKind::Log {server_name, keyword} = event.event_kind {
+            let event_name = event.name;
             tokio::spawn(async move {
                 let stream = server_manager.logs_stream(server_name.as_str()).await;
 
