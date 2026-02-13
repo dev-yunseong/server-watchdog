@@ -86,8 +86,6 @@ The `server-watchdog` CLI is used to configure the application.
 
 ## Usage
 
-
-
 ### Available Commands
 
 Once the watchdog is running, you can interact with it through the configured messenger client (e.g., Telegram).
@@ -98,6 +96,9 @@ Once the watchdog is running, you can interact with it through the configured me
 - **/alarm `add` `<event_name>`**: Adds an alarm for a pre-configured event.
 - **/alarm `remove` `<event_name>`**: Removes an alarm for a pre-configured event.
 - **/alarm `list`**: Lists all active alarms.
+
+- **/event `[list]`**: Lists all configured events.
+    - `list` (optional): Displays a list of all configured events. If omitted, acts the same as `/event list`.
 
 - **/logs `<server_name>` `<lines>`**: Fetches the last `<lines>` of logs from the specified server.
     - `server_name`: The name you assigned to the server.
