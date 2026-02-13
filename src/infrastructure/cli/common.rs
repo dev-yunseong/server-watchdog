@@ -58,7 +58,7 @@ impl Commands {
         match self {
             Commands::Password { command } => {
                 let chat_list_file_accessor: Arc<dyn FileAccessor<ChatList> + Send + Sync> = Arc::new(get_chat_list_file_accessor());
-                let mut auth_adapter = AuthAdapter::new(config_file_accessor, chat_list_file_accessor);
+                let mut auth_adapter = AuthAdapter::new(config_file_accessor.clone(), chat_list_file_accessor);
                 auth_adapter.init().await;
                 let auth_config = Box::new(auth_adapter);
                 command.run(auth_config).await
@@ -66,7 +66,7 @@ impl Commands {
             Commands::Server { command } => {
                 debug!("server command");
                 let server_config = ServerConfigAdapter::new(
-                    config_file_accessor
+                    config_file_accessor.clone()
                 );
                 let server_config = Box::new(server_config);
                 command.run(server_config).await
@@ -74,18 +74,17 @@ impl Commands {
             Commands::Client { command } => {
                 debug!("client command");
                 let client_config = ClientConfigAdapter::new(
-                    config_file_accessor
+                    config_file_accessor.clone()
                 );
                 let client_config = Box::new(client_config);
                 command.run(client_config).await
             },
             Commands::Event { command } => {
                 debug!("event command");
-                let config_file_accessor: Arc<dyn FileAccessor<Config> + Send + Sync> = Arc::new(get_config_file_accessor());
                 let subscribe_file_accessor: Arc<dyn FileAccessor<EventSubscribeList> + Send + Sync> = Arc::new(get_event_subscribe_file_accessor());
 
                 let event_config = EventConfigAdapter::new(
-                    config_file_accessor,
+                    config_file_accessor.clone(),
                     subscribe_file_accessor
                 );
                 let event_config = Box::new(event_config);
@@ -93,7 +92,6 @@ impl Commands {
             },
             Commands::Run => {
                 debug!("run command");
-                let config_file_accessor: Arc<dyn FileAccessor<Config> + Send + Sync> = Arc::new(get_config_file_accessor());
                 let chat_list_file_accessor: Arc<dyn FileAccessor<ChatList> + Send + Sync> = Arc::new(get_chat_list_file_accessor());
                 let subscribe_file_accessor: Arc<dyn FileAccessor<EventSubscribeList> + Send + Sync> = Arc::new(get_event_subscribe_file_accessor());
 
@@ -117,10 +115,10 @@ impl Commands {
                 );
                 server_repository.load().await;
 
-                let event_subscribe = EventConfigAdapter::new(
+                let event_config_adapter = Arc::new(EventConfigAdapter::new(
                     config_file_accessor.clone(),
                     subscribe_file_accessor.clone()
-                );
+                ));
 
                 let server_manager = Arc::new(GeneralServerManager::new(Box::new(server_repository)));
 
@@ -128,7 +126,8 @@ impl Commands {
                     message_gateway.clone(),
                     server_manager.clone(),
                     Box::new(auth_adapter),
-                    Box::new(event_subscribe)
+                    event_config_adapter.clone(),
+                    event_config_adapter.clone()
                 );
 
                 let (tx, rx_event) = mpsc::channel(32);

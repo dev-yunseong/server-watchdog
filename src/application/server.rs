@@ -13,5 +13,5 @@ pub trait ServerManager : Send + Sync {
     async fn healthcheck(&self, name: &str) -> Health;
     async fn healthcheck_all(&self) -> Vec<(&str, Health)>;
     async fn logs(&self, name: &str, n: i32) -> Option<String>;
-    async fn logs_stream(&self, name: &str) -> Option<Box<dyn Stream<Item=String> + Send + Sync>>;
+    async fn logs_stream(&self, name: &str) -> Option<Box<dyn Stream<Item=String> + Send>>;
 }

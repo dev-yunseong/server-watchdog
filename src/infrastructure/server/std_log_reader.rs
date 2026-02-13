@@ -19,6 +19,10 @@ impl StdLogReader {
         trace!("StdLogReader::read_follow for server: {}", server.name);
         let log_command = server.log_command.as_ref()?;
 
+        if log_command.is_empty() {
+            return None;
+        }
+
         debug!("log_command: {:?}", log_command);
 
         let mut args: Vec<&str> = log_command[1..]
@@ -45,6 +49,10 @@ impl StdLogReader {
     pub async fn read(&self, server: &Server, n: i32) -> Option<String> {
         trace!("StdLogReader::read for server: {}, n: {}", server.name, n);
         if let Some(log_command) = server.log_command.as_ref() {
+            if log_command.is_empty() {
+                return None;
+            }
+
             debug!("log_command: {:?}", log_command);
             let n_str = n.to_string();
 

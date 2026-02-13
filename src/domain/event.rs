@@ -1,10 +1,12 @@
 use crate::domain::config::EventConfig;
 
+#[derive(Clone)]
 pub struct Event {
     pub name: String,
     pub event_kind: EventKind
 }
 
+#[derive(Clone)]
 pub enum EventKind {
     Log {
         server_name: String,

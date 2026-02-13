@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use derive_new::new;
 use log::{debug, trace};
 use crate::application::client::MessageGateway;
-use crate::application::config::{AuthUseCase, EventSubscribeUseCase};
+use crate::application::config::{AuthUseCase, EventConfigUseCase, EventSubscribeUseCase};
 use crate::application::handler::command::{Command, Run};
 use crate::application::handler::MessageHandler;
 use crate::application::server::ServerManager;
@@ -20,14 +20,13 @@ Available commands:
 
 use std::sync::Arc;
 
-//...
-
 #[derive(new)]
 pub struct GeneralHandler {
     pub message_gateway: Arc<dyn MessageGateway>,
     pub server_manager: Arc<dyn ServerManager>,
     pub auth_use_case: Box<dyn AuthUseCase>,
-    pub event_subscribe_use_case: Box<dyn EventSubscribeUseCase>,
+    pub event_subscribe_use_case: Arc<dyn EventSubscribeUseCase>,
+    pub event_config_use_case: Arc<dyn EventConfigUseCase>,
 }
 
 #[async_trait]
