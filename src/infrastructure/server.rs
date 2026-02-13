@@ -1,3 +1,4 @@
+mod child_process_stream;
 mod http_server_client;
 mod std_log_reader;
 mod docker;
@@ -115,6 +116,6 @@ impl ServerManager for GeneralServerManager {
 
     async fn logs_stream(&self, name: &str) -> Option<Box<dyn Stream<Item=String> + Send + Sync>> {
         let server = self.server_repository.find(name)?;
-        self.std_log_reader.read_follow(server).await.map(|s| Box::new(s) as Box<dyn Stream<Item=String> + Send + Sync>)
+        self.std_log_reader.read_follow(server).await.map(|s| s.into_box())
     }
 }

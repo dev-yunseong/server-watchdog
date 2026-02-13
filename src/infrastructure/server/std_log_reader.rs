@@ -1,6 +1,7 @@
 use log::{debug, error, trace};
 use crate::domain::server::Server;
-use crate::infrastructure::server::util::{SystemCommandExecutor, ChildProcessStream};
+use crate::infrastructure::server::util::SystemCommandExecutor;
+use crate::infrastructure::server::child_process_stream::ChildProcessStream;
 
 pub struct StdLogReader {
     system_command_executor: SystemCommandExecutor
