@@ -89,7 +89,7 @@ impl EventChecker for LogEventChecker {
                         if line.contains(keyword.as_str()) {
                             let _ = tx.send(EventMessage {
                                 event_name: server_name.clone(),
-                                text: format!("Keyword '{}' found in logs of server '{}'", keyword, server_name),
+                                text: format!("Keyword '{}' found in logs of server '{}'\nLog: {}", keyword, server_name, line),
                             }).await;
                         }
                     }
