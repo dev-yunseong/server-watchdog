@@ -5,7 +5,7 @@ use anyhow::anyhow;
 use async_trait::async_trait;
 use log::{debug, trace};
 use crate::application::handler::command::alarm::AlarmCommand;
-use crate::application::handler::command::Command::{Alarm, HealthCheck, HealthCheckAll, Logs, Nothing};
+use crate::application::handler::command::Command::{Alarm, EventList, HealthCheck, HealthCheckAll, Logs, Nothing};
 use crate::application::handler::GeneralHandler;
 use crate::domain::client::Message;
 
@@ -20,7 +20,8 @@ pub enum Command {
     HealthCheckAll,
     HealthCheck(String),
     Nothing,
-    Alarm(AlarmCommand)
+    Alarm(AlarmCommand),
+    EventList,
 }
 
 #[async_trait]
@@ -47,6 +48,11 @@ impl Run for Command {
             },
             Command::Alarm(command) => {
                 command.run(handler, id, message).await
+            },
+            Command::EventList => {
+                let events = handler.event_config_use_case.list_event().await?;
+                let event_names = events.iter().map(|e| e.name.clone()).collect::<Vec<String>>().join("\n");
+                Ok(format!("Available events:\n{}", event_names))
             }
             Command::Nothing => Ok(String::from(crate::application::handler::general::INVALID_COMMAND_MESSAGE))
         }
@@ -76,7 +82,9 @@ impl Command {
             },
             ["/alarm"] => {
                 Alarm(AlarmCommand::List)
-            }
+            },
+            ["/event", "list"] => EventList,
+            ["/event"] => EventList,
             _ => Nothing
         };
         debug!("parsed command: {:?}", &command);

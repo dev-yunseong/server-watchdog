@@ -117,10 +117,10 @@ impl Commands {
                 );
                 server_repository.load().await;
 
-                let event_subscribe = EventConfigAdapter::new(
+                let event_config_adapter = Arc::new(EventConfigAdapter::new(
                     config_file_accessor.clone(),
                     subscribe_file_accessor.clone()
-                );
+                ));
 
                 let server_manager = Arc::new(GeneralServerManager::new(Box::new(server_repository)));
 
@@ -128,7 +128,8 @@ impl Commands {
                     message_gateway.clone(),
                     server_manager.clone(),
                     Box::new(auth_adapter),
-                    Box::new(event_subscribe)
+                    event_config_adapter.clone(),
+                    event_config_adapter.clone()
                 );
 
                 let (tx, rx_event) = mpsc::channel(32);
