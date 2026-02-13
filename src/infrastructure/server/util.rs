@@ -48,7 +48,7 @@ impl SystemCommandExecutor {
         }
     }
 
-    pub async fn capture_output_follow(&self, cmd: &str, args: &[&str]) -> Result<Box<dyn Stream<Item = String> + Send + Sync>, std::io::Error> {
+    pub async fn capture_output_follow(&self, cmd: &str, args: &[&str]) -> Result<Box<dyn Stream<Item = String> + Send>, std::io::Error> {
         let mut child = Command::new(cmd)
             .args(args)
             .stdout(Stdio::piped())

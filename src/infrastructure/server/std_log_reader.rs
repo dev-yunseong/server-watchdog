@@ -15,7 +15,7 @@ impl StdLogReader {
         }
     }
 
-    pub async fn read_follow(&self, server: &Server) -> Option<Box<dyn Stream<Item = String> + Send + Sync>> {
+    pub async fn read_follow(&self, server: &Server) -> Option<Box<dyn Stream<Item = String> + Send>> {
         trace!("StdLogReader::read_follow for server: {}", server.name);
         let log_command = server.log_command.as_ref()?;
 
