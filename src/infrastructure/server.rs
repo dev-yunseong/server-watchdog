@@ -1,3 +1,4 @@
+mod child_process_stream;
 mod http_server_client;
 mod std_log_reader;
 mod docker;

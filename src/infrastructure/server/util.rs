@@ -6,6 +6,8 @@ use tokio_stream::wrappers::LinesStream;
 use tokio::process::Command;
 use tokio_stream::{Stream, StreamExt};
 
+use super::child_process_stream::ChildProcessStream;
+
 #[derive(new)]
 pub struct SystemCommandExecutor;
 
@@ -52,7 +54,7 @@ impl SystemCommandExecutor {
         let mut child = Command::new(cmd)
             .args(args)
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped()) // 일단 둘 다 파이프로 연결
+            .stderr(Stdio::piped())
             .spawn()?;
 
         let stdout = child.stdout.take().unwrap();
@@ -64,7 +66,7 @@ impl SystemCommandExecutor {
             .map(|res| res.unwrap_or_else(|e| format!("stderr error: {}", e)));
 
         let combined_stream = stdout_stream.merge(stderr_stream);
-
+        let combined_stream = ChildProcessStream::new(Box::pin(combined_stream), child);
         Ok(Box::new(combined_stream))
     }
 }
