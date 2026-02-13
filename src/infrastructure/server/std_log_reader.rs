@@ -1,4 +1,5 @@
 use log::{debug, error, trace};
+use tokio_stream::Stream;
 use crate::domain::server::Server;
 use crate::infrastructure::server::util::{SystemCommandExecutor, ChildProcessStream};
 
@@ -14,7 +15,7 @@ impl StdLogReader {
         }
     }
 
-    pub async fn read_follow(&self, server: &Server) -> Option<ChildProcessStream> {
+    pub async fn read_follow(&self, server: &Server) -> Option<Box<dyn Stream<Item = String> + Send>> {
         trace!("StdLogReader::read_follow for server: {}", server.name);
         let log_command = server.log_command.as_ref()?;
 

@@ -80,11 +80,11 @@ impl SystemCommandExecutor {
         }
     }
 
-    pub async fn capture_output_follow(&self, cmd: &str, args: &[&str]) -> Result<ChildProcessStream, std::io::Error> {
+    pub async fn capture_output_follow(&self, cmd: &str, args: &[&str]) -> Result<Box<dyn Stream<Item = String> + Send>, std::io::Error> {
         let mut child = Command::new(cmd)
             .args(args)
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped()) // 일단 둘 다 파이프로 연결
+            .stderr(Stdio::piped())
             .spawn()?;
 
         let stdout = child.stdout.take().unwrap();
@@ -97,6 +97,6 @@ impl SystemCommandExecutor {
 
         let combined_stream = stdout_stream.merge(stderr_stream);
 
-        Ok(ChildProcessStream::new(Box::pin(combined_stream), child))
+        Ok(Box::new(ChildProcessStream::new(Box::pin(combined_stream), child)))
     }
 }
